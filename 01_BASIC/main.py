@@ -125,6 +125,46 @@ def create_item(payload: ItemIn):               # payload: ItemIn -> request의 
 
 
 
+# ----------------------------------
+# 파일 업로드
+
+# Endpoint: POST /upload
+# 설명: form-data로 파일 업로드
+# 테스트: key=file, value=<binary>
+# ----------------------------------
+
+@app.post("/upload") # 이름 = file
+async def upload_file(file: UploadFile = File(...)): # async = 비동기 처리
+    content = await file.read()
+    return {"filename": file.filename, "size": len(content), "content_type": file.content_type}
+
+
+
+
+
+
+
+
+# ----------------------------------------------------------------------
+# 비동기 처리
+
+# Endpoint: GET /notify?email=test@example.com
+# 설명: 이메일 전송 대신 로그 파일에 기록(비동기 큐잉)
+# 테스트: GET http://localhost:8000/notify?email=test@example.com
+# -----------------------------------------------------------------------
+
+def send_email(to: str):
+    with open("notifications.log", "a", encoding="utf-8") as f: # 파일 outstream을 열어서 한 번 쓰고 끝!
+        f.write(f"sent to: {to}\n")
+
+@app.get("/notify")
+def notify(bg: BackgroundTasks, email: str = Query(...)):
+    bg.add_task(send_email, email)
+    return {"queued": True, "to": email}
+
+
+
+
 
 
 
